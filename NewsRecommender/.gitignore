@@ -1,0 +1,13 @@
+config.py
+./data/
+./demos/
+./ref/
+./fig/
+./backup/
+.ipynb_checkpoints/
+*.pkl
+*.lda*
+*.txt
+*.json
+*.pyc
+fake*
