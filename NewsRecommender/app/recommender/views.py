@@ -29,25 +29,14 @@ def how():
 def about():
     return render_template('about.html')
 
-# @app.route('/get_news/<user_name>', methods=["GET"])
-# def get_news(user_name):
-#     # rdef get_recommendations(name):
-#     data = request.get_recommendations(user_name)
-#     # return articles
-#     return json.dumps(data)
-
 @app.route('/get_news/', methods=["GET", "POST"])
 def get_news():
-    # rdef get_recommendations(name):
     if request.method == "POST":
         query = request.form.get('query')
         print("running in get_news with " + query)
         data = rq.get_recommendations(query,5)
-    # return articles
-    # return json.dumps(data)
     return render_template('news_recommend.html', data=data)
   
 if __name__ == "__main__":
-    # app.run(host='0.0.0.0',port=5000,debug=True)
     app = Flask(__name__)
     app.run(debug=True)

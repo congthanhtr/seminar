@@ -127,15 +127,6 @@ def collect_words():
 def get_words(group):
     return pickle.load(open('./word_frequency.pkl', 'rb'))[group]
 
-
-# def get_recommendations(name):
-#     group = predict_user_group(name)
-#     articles = get_articles_for_group(size=10, group=group)
-#     # save_articles(articles)
-#     #articles = pickle.load(open('./articles.pkl', 'rb'))
-#     words = get_words(group)
-#     return {"articles": articles, "words": words, "group": group}
-
 # start from here
 from gensim import similarities
 from gensim import corpora, models
@@ -145,11 +136,6 @@ import nltk
 # nltk.download('stopwords')
 import spacy
 import pandas as pd
-
-# load file csv to dataframe
-# df=pd.read_csv("NewsArticles.csv", encoding='unicode_escape',index_col=0)                                                              
-# #drop all the unnamed columns
-# df.drop(df.columns[df.columns.str.contains('unnamed',case = False)],axis = 1, inplace = True)
 
 with open('dataframe.txt', 'rb') as f:
     df = pickle.load(f)
@@ -189,40 +175,31 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 
-def get_contents(link):
-    html = requests.get(link)
-    htmlParse = BeautifulSoup(html.text, 'html.parser')
-    contents = ""
-    for para in htmlParse.find_all("p"):
-        contents = (contents + para.get_text())
-    return contents
-
-def get_image(link):
-    r = requests.get(link)
-    html = r.text
-    soup = BeautifulSoup(html, "html5lib")
-    links = soup.find_all('div', {'class': 'image'})
-    if links:
-        return (links[0].find('img')['src'])
+def get_all(url):
+    html = requests.get(url)
+    soup = BeautifulSoup(html.text, 'html.parser')
+    
+    # get title
+    find_title = soup.find('title')
+    if find_title is None:
+        title = ""
     else:
-        return ""
+        title = find_title.string
 
-def get_title(link):
-    request = requests.get(link)
-    soup = BeautifulSoup(request.text, 'html.parser')
-    title = soup.find('title')
-    if title is None:
-        return ""
-    return title.string
+    # get image
+    find_image = soup.find_all('div', {'class': 'image'})
+    if find_image:
+        image = (find_image[0].find('img')['src'])
+    else:
+        image = ""
+
+    # get contents
+    contents = ""
+    for para in soup.find_all('p'):
+        contents = (contents + para.get_text())
+    return image, title, contents, url
 
 def get_recommendations(query, result):
-    # group = predict_user_group(query)
-    # articles = get_articles_for_group(size=10, group=group)
-    # # save_articles(articles)
-    # #articles = pickle.load(open('./articles.pkl', 'rb'))
-    # words = get_words(group)
-    # return {"articles": articles, "words": words, "group": group}
-
     print("QUERY: " + query)
     words = word2id.doc2bow(query.lower().split())
     
@@ -237,31 +214,22 @@ def get_recommendations(query, result):
 
     idx = 0
     pids = []
-    # article_ids = df['article_source_link'].values.tolist()
     with open('article_ids.txt','rb') as f:
         article_ids = pickle.load(f)
         f.close()
-
-    # while result > 0:
-    #     pageid = article_ids[sims[idx][0]]
-    #     if pageid not in pids:
-    #         pids.append(pageid)
-    #         result -= 1
-    #     idx += 1
-    # return pids
+    
+    # Init a dict to store data then sending to template
     dict = []
 
     while result > 0:
         pageid = article_ids[sims[idx][0]]
         if pageid not in pids:
-            # dict['image'] = get_image(pageid)
-            # dict['title'] = get_title(pageid)
-            # dict['content'] = get_contents(pageid)
             tuple = []
-            tuple.append(get_image(pageid))
-            tuple.append(get_title(pageid))
-            tuple.append(get_contents(pageid))
-            tuple.append(pageid)
+            image, title, contents, url = get_all(pageid)
+            tuple.append(image)
+            tuple.append(title)
+            tuple.append(contents)
+            tuple.append(url)
             dict.append(tuple)
             result-=1
         idx+=1
